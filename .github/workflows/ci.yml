@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show the toolchain
+        run: |
+          swift --version
+          sw_vers
+
+      - name: Build (debug and release)
+        run: |
+          swift build
+          swift build -c release
+
+      - name: Check for warnings
+        # Warnings are treated as failures: the release build is warning-free on
+        # a clean checkout, and it is easy to miss one creeping back in.
+        run: |
+          output="$(swift build -c release 2>&1)"
+          echo "$output"
+          if grep -q "warning:" <<<"$output"; then
+            echo "::error::the release build produced warnings"
+            exit 1
+          fi
+
+      - name: Install test dependencies
+        # The FTP tests run against a real pyftpdlib server. Without it those
+        # tests skip rather than fail, so this is not strictly required, but the
+        # point of CI is to actually exercise them.
+        run: |
+          python3 -m venv .venv-test
+          .venv-test/bin/python -m pip install --quiet --upgrade pip
+          .venv-test/bin/python -m pip install --quiet pyftpdlib
+          .venv-test/bin/python -c "import pyftpdlib; print('pyftpdlib ready')"
+
+      - name: Run the test suite
+        run: ./Scripts/test.sh
+
+      - name: Build the app bundle
+        run: ./Scripts/bundle.sh release
+
+      - name: Verify the bundle
+        run: |
+          codesign --verify --verbose=2 dist/SFTPsurf.app
+          test -x dist/SFTPsurf.app/Contents/MacOS/SFTPsurf
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' dist/SFTPsurf.app/Contents/Info.plist
+
+      - name: Upload the app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: SFTPsurf-app
+          path: dist/SFTPsurf.app
+          if-no-files-found: error

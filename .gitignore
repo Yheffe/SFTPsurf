@@ -1,0 +1,19 @@
+# Build output
+.build/
+dist/
+build/
+
+# Test-only virtualenv for the Python FTP server
+.venv-test/
+
+# macOS
+.DS_Store
+._*
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Editors
+.vscode/
+*.xcuserstate

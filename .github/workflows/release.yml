@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: macos-14
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag matches the app version
+        # Catches the classic mistake of tagging v1.2 while Info.plist still says
+        # 1.1, which would produce a download whose name lies about its contents.
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)"
+          tag="${GITHUB_REF_NAME#v}"
+          echo "Info.plist: $version   tag: $tag"
+          if [[ "$version" != "$tag" ]]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match CFBundleShortVersionString $version"
+            exit 1
+          fi
+
+      - name: Install test dependencies
+        run: |
+          python3 -m venv .venv-test
+          .venv-test/bin/python -m pip install --quiet --upgrade pip
+          .venv-test/bin/python -m pip install --quiet pyftpdlib
+
+      - name: Test
+        run: ./Scripts/test.sh
+
+      - name: Build the app bundle
+        run: ./Scripts/bundle.sh release
+
+      - name: Build the disk image
+        # Note: arranging the icons needs Automation permission for Finder, which
+        # a CI runner does not grant. The image is still correct and usable; the
+        # two icons simply sit wherever Finder puts them. Building locally with
+        # Scripts/make-dmg.sh produces the arranged version.
+        run: ./Scripts/make-dmg.sh
+
+      - name: Report the artefact
+        run: |
+          ls -la dist/
+          shasum -a 256 dist/*.dmg
+
+      - name: Attach the disk image to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.dmg
+          generate_release_notes: true
+          body: |
+            ### Installing
+
+            Open the disk image and drag **SFTPsurf** onto **Applications**.
+
+            This build is ad-hoc signed and not notarised, so macOS will warn that
+            the developer cannot be verified. To open it anyway, right-click the
+            app in Applications and choose **Open**, then confirm. Alternatively:
+
+            ```sh
+            xattr -d com.apple.quarantine /Applications/SFTPsurf.app
+            ```
+
+            Removing that warning needs a paid Apple Developer ID certificate and
+            a notarisation submission. See the README for details.

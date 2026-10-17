@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest an idea or an improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, it is worth checking the "Known limitations" section of the
+        README — some things are deliberate rather than missing, such as there
+        being no FTPS support and no resumable transfers.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: |
+        Describing the situation is more useful than describing the solution;
+        there may be a better way to fix the underlying problem.
+      placeholder: |
+        I keep needing to edit a file on the server and then re-upload it, and
+        the round trip through /tmp is tedious.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you have considered
+      description: Including anything you do today to work around it.
+    validations:
+      required: false

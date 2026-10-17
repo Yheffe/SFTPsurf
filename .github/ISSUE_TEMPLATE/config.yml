@@ -1,0 +1,7 @@
+# Blank issues are disabled so that reports arrive with the details that actually
+# help: server software, macOS version, and the error text.
+#
+# Security reports are handled separately rather than through a link here.
+# SECURITY.md is surfaced by GitHub in the Security tab, which is where private
+# vulnerability reporting lives.
+blank_issues_enabled: false

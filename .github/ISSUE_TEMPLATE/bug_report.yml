@@ -1,0 +1,90 @@
+name: Bug report
+description: Something did not work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The details below make an enormous difference,
+        because most problems here turn out to be specific to one server's
+        behaviour.
+
+        **Please do not paste passwords, private keys, or hostnames you would
+        rather not publish.** A redacted error line is usually enough.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+      placeholder: |
+        I selected three files and chose Download. Two arrived; the third
+        stopped partway and the row said "Failed: ...".
+    validations:
+      required: true
+
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: Protocol
+      options:
+        - SFTP
+        - FTP
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: server
+    attributes:
+      label: Server software
+      description: |
+        If you know it. Many bugs are server-specific, so this is often the
+        single most useful field. For example: OpenSSH 9.6 on Debian, ProFTPD,
+        vsftpd, Synology DSM, or a consumer NAS.
+      placeholder: OpenSSH 9.6 on Ubuntu 24.04
+    validations:
+      required: false
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "14.6"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you get SFTPsurf?
+      options:
+        - Built from source with swift run
+        - Built the .app with Scripts/bundle.sh
+        - Installed from the .dmg
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message or log output
+      description: |
+        Whatever the app showed. If it said the connection "ended unexpectedly",
+        running `swift run SFTPsurf` from a terminal is worth trying - ssh's own
+        messages appear on stderr there and usually name the real cause.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Connect to ...
+        2. Navigate to ...
+        3. Select ...
+        4. See ...
+    validations:
+      required: false

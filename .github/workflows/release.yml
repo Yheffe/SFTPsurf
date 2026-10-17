@@ -11,7 +11,7 @@ permissions:
 jobs:
   release:
     name: Build and publish
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 40
 
     steps:
@@ -43,10 +43,13 @@ jobs:
         run: ./Scripts/bundle.sh release
 
       - name: Build the disk image
-        # Note: arranging the icons needs Automation permission for Finder, which
-        # a CI runner does not grant. The image is still correct and usable; the
-        # two icons simply sit wherever Finder puts them. Building locally with
-        # Scripts/make-dmg.sh produces the arranged version.
+        # Arranging the icons needs Automation permission for Finder, which a
+        # runner does not grant, so the step is skipped outright rather than left
+        # to time out. The image is complete and installable, with the custom
+        # volume icon and background; the two icons just sit wherever Finder puts
+        # them. Building locally produces the arranged version.
+        env:
+          SFTPsurf_SKIP_LAYOUT: "1"
         run: ./Scripts/make-dmg.sh
 
       - name: Report the artefact

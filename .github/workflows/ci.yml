@@ -13,15 +13,18 @@ concurrency:
 jobs:
   build-and-test:
     name: Build and test
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Show the toolchain
+        # Package.swift declares swift-tools-version 6.0, so this needs a Swift 6
+        # toolchain. macos-15 ships Xcode 16.4; macos-14 would fail immediately.
         run: |
           swift --version
+          xcodebuild -version
           sw_vers
 
       - name: Build (debug and release)

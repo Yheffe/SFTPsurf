@@ -116,18 +116,18 @@ fi
 # the real folder on whatever machine opens the image.
 ln -sf /Applications "$MOUNT_POINT/Applications"
 
-# --- 4. Volume icon -----------------------------------------------------------
-if [[ -f "$ROOT/Resources/AppIcon.icns" ]]; then
-    cp "$ROOT/Resources/AppIcon.icns" "$MOUNT_POINT/.VolumeIcon.icns"
-    SetFile -a C "$MOUNT_POINT" 2>/dev/null || true
-fi
-
-# --- 5. Ask Finder to arrange the window -------------------------------------
+# --- 4. Ask Finder to arrange the window -------------------------------------
 # This is what makes the image look designed rather than like a folder. It needs
 # Automation permission for Finder; if that is unavailable the image is still
 # perfectly usable, just plainer, so a failure here is reported and survived.
-echo "==> Arranging icons (this needs Automation permission for Finder)"
 LAYOUT_APPLIED=0
+if [[ -n "${SFTPsurf_SKIP_LAYOUT:-}" ]]; then
+    # Requested explicitly, typically in CI where Finder automation is not
+    # available. The image is complete and correct; the two icons just end up
+    # wherever Finder puts them.
+    echo "==> Skipping the Finder icon arrangement (SFTPsurf_SKIP_LAYOUT is set)"
+else
+echo "==> Arranging icons (this needs Automation permission for Finder)"
 layout_error="$(osascript <<APPLESCRIPT 2>&1
 tell application "Finder"
     tell disk "$VOLUME_NAME"
@@ -158,6 +158,19 @@ if [[ -n "$layout_error" ]]; then
     echo "      The image will still work; the icons will just be unplaced." >&2
 else
     LAYOUT_APPLIED=1
+fi
+fi
+
+# --- 5. Volume icon -----------------------------------------------------------
+# Deliberately copied *after* the Finder step above. Setting a background picture
+# on the window makes Finder rewrite the volume's metadata, and it deletes
+# .VolumeIcon.icns while doing so. Copying it afterwards is the difference between
+# a disk image with a custom volume icon and one without.
+if [[ -f "$ROOT/Resources/AppIcon.icns" ]]; then
+    cp "$ROOT/Resources/AppIcon.icns" "$MOUNT_POINT/.VolumeIcon.icns" \
+        || fail "could not write the volume icon"
+    # Tells Finder to use .VolumeIcon.icns for this volume.
+    SetFile -a C "$MOUNT_POINT" 2>/dev/null || true
 fi
 
 # .DS_Store is written asynchronously, so give Finder a moment before detaching.
@@ -190,6 +203,7 @@ if hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$VERIFY_POINT" >/dev/n
     [[ -x "$VERIFY_POINT/SFTPsurf.app/Contents/MacOS/SFTPsurf" ]] || verify_failures+="the executable is missing; "
     [[ -L "$VERIFY_POINT/Applications" ]] || verify_failures+="the Applications alias is missing; "
     [[ -f "$VERIFY_POINT/.background/background.png" ]] || verify_failures+="the background is missing; "
+    [[ -f "$VERIFY_POINT/.VolumeIcon.icns" ]] || verify_failures+="the volume icon is missing; "
     # Only required when Finder was able to arrange the window in the first place.
     if [[ "$LAYOUT_APPLIED" == "1" ]]; then
         [[ -f "$VERIFY_POINT/.DS_Store" ]] || verify_failures+="the icon layout was not saved; "

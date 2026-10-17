@@ -8,6 +8,24 @@ Notable changes to SFTPsurf. This project uses [semantic versioning][semver].
 
 Nothing yet.
 
+## [1.1.1] — 2026-10-17
+
+A packaging fix. The application is unchanged from 1.1; the disk image it ships
+in was wrong.
+
+### Fixed
+
+- **The released disk image opened as a plain folder.** The window's background
+  picture and icon positions both live in `.DS_Store`, which only Finder can
+  write — and a CI runner has no Automation permission to ask it. The published
+  1.1 image therefore had the background image present but unreferenced, and the
+  icons unplaced. It also had no custom volume icon, because Finder deletes
+  `.VolumeIcon.icns` while applying a background picture and the build was
+  copying it too early; that affected locally built images too. The view
+  settings are now kept in the repository and applied whenever Finder cannot be
+  asked, and the volume icon is written after the Finder step. Verification
+  asserts both, so neither can regress quietly.
+
 ## [1.1] — 2026-10-17
 
 The first release intended for other people. Substantial hardening after testing

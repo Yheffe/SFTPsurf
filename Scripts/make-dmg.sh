@@ -161,7 +161,24 @@ else
 fi
 fi
 
-# --- 5. Volume icon -----------------------------------------------------------
+# --- 5. Finder view settings ---------------------------------------------------
+# The window's background picture and icon positions are both stored in
+# .DS_Store. Normally Finder writes it in the step above, but it cannot on a CI
+# runner that has no Automation grant. Falling back to the copy kept in
+# Resources/dmg means the image still opens looking arranged rather than as a
+# plain folder. Regenerate that copy with Scripts/make-dmg.sh on a machine that
+# can reach Finder whenever the background or the icon positions change.
+if [[ "$LAYOUT_APPLIED" != "1" ]]; then
+    if [[ -f "$ROOT/Resources/dmg/DS_Store" ]]; then
+        echo "==> Applying the stored Finder view settings"
+        cp "$ROOT/Resources/dmg/DS_Store" "$MOUNT_POINT/.DS_Store" \
+            || fail "could not write .DS_Store"
+    else
+        echo "    ! no stored view settings; the window will not be arranged" >&2
+    fi
+fi
+
+# --- 6. Volume icon -----------------------------------------------------------
 # Deliberately copied *after* the Finder step above. Setting a background picture
 # on the window makes Finder rewrite the volume's metadata, and it deletes
 # .VolumeIcon.icns while doing so. Copying it afterwards is the difference between
@@ -181,7 +198,7 @@ echo "==> Detaching"
 hdiutil detach "$MOUNT_POINT" >/dev/null 2>&1 || hdiutil detach "$MOUNT_POINT" -force >/dev/null 2>&1
 DETACH_NEEDED=0
 
-# --- 6. Compress --------------------------------------------------------------
+# --- 7. Compress --------------------------------------------------------------
 echo "==> Compressing"
 rm -f "$DMG"
 hdiutil convert "$RW_IMAGE" \
@@ -193,7 +210,7 @@ if [[ ! -f "$DMG" ]]; then
     fail "no image was produced at $DMG"
 fi
 
-# --- 7. Verify by reading the finished image back ----------------------------
+# --- 8. Verify by reading the finished image back ----------------------------
 echo "==> Verifying"
 VERIFY_POINT="$(mktemp -d)"
 verify_failures=""
@@ -204,10 +221,9 @@ if hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$VERIFY_POINT" >/dev/n
     [[ -L "$VERIFY_POINT/Applications" ]] || verify_failures+="the Applications alias is missing; "
     [[ -f "$VERIFY_POINT/.background/background.png" ]] || verify_failures+="the background is missing; "
     [[ -f "$VERIFY_POINT/.VolumeIcon.icns" ]] || verify_failures+="the volume icon is missing; "
-    # Only required when Finder was able to arrange the window in the first place.
-    if [[ "$LAYOUT_APPLIED" == "1" ]]; then
-        [[ -f "$VERIFY_POINT/.DS_Store" ]] || verify_failures+="the icon layout was not saved; "
-    fi
+    # Required either way: it holds both the background picture and the icon
+    # positions, so without it the image opens as a plain folder.
+    [[ -f "$VERIFY_POINT/.DS_Store" ]] || verify_failures+="the Finder view settings are missing; "
 
     if ! codesign --verify "$VERIFY_POINT/SFTPsurf.app" 2>/dev/null; then
         verify_failures+="the app's signature does not validate; "
@@ -235,7 +251,7 @@ if [[ -n "$verify_failures" ]]; then
     fail "verification failed: ${verify_failures%; }"
 fi
 
-# --- 8. Report ----------------------------------------------------------------
+# --- 9. Report ----------------------------------------------------------------
 SIZE="$(du -h "$DMG" | awk '{print $1}')"
 CHECKSUM="$(shasum -a 256 "$DMG" | awk '{print $1}')"
 

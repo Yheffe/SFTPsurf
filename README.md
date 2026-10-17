@@ -12,8 +12,8 @@ button:
 
 ## Requirements
 
-macOS 14 or later, plus the Swift toolchain. This machine builds with the
-Command Line Tools alone — Xcode is **not** required:
+macOS 14 or later, plus the Swift toolchain. It builds with the Command Line
+Tools alone — Xcode is **not** required:
 
 ```sh
 xcode-select --install     # if you do not already have the tools
@@ -158,10 +158,12 @@ The suite runs against real servers rather than mocks:
 - **FTP** is tested against a real `pyftpdlib` server booted on a random port,
   including a run with `MLSD` disabled to exercise the `LIST` parser.
 
-102 checks cover listing, metadata, rename, permissions, recursive transfers,
-byte-for-byte round trips, the transfer scheduler, the stores, path helpers,
-both FTP listing parsers, the subprocess transports, and the scripted-launch
-config parser.
+The suite covers listing, metadata, rename, permissions, recursive transfers,
+byte-for-byte round trips (including files larger than one packet), the transfer
+scheduler and its concurrency limit, cancellation, the stores, path helpers, both
+FTP listing parsers, the subprocess transports, and the scripted-launch config
+parser. `Scripts/test.sh` prints the count, which is not repeated here so it
+cannot go stale.
 
 ### Testing against a real server
 

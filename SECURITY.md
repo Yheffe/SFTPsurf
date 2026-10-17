@@ -2,9 +2,9 @@
 
 ## Reporting a vulnerability
 
-Please **do not open a public issue** for a security problem. Instead, use
-GitHub's [private vulnerability reporting][advisory] on this repository, or
-contact the maintainer directly if that is unavailable.
+Please **do not open a public issue** for a security problem. Use GitHub's
+[private vulnerability reporting][advisory] on this repository instead, which
+keeps the report visible only to the maintainers.
 
 Please include what you did, what happened, and what you think the impact is. A
 minimal reproduction helps enormously. You should get a reply within a few days.

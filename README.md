@@ -250,5 +250,5 @@ passwords, keys and host keys — worth reading before trusting it with a server
 
 ## License
 
-[MIT](LICENSE) © 2026 Gary Loving.
+[MIT](LICENSE) © 2026 Yheffe.
 
